@@ -6,6 +6,13 @@ backend/.env
 backend/.env.local
 backend/.env.production
 
+# Google OAuth credentials and tokens
+token.json
+credentials.json
+*client_secret*.json
+backend/token.json
+backend/credentials.json
+
 # Virtual environments
 venv/
 backend/venv/
