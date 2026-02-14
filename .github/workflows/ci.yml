@@ -1,0 +1,56 @@
+name: CI Pipeline
+
+# Triggers
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Step 1: Checkout code
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    # Step 2: Set up Python
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    # Step 3: Install dependencies
+    - name: Install dependencies
+      run: |
+        cd backend
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-asyncio pytest-cov bandit flake8
+    
+    # Step 4: Run linting
+    - name: Run Flake8 linting
+      run: |
+        cd backend
+        flake8 app/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 app/ --count --ignore=W293,W291,W503,E302,F401,F541 --max-line-length=127 --statistics
+      continue-on-error: true
+    
+    # Step 5: Run security checks
+    - name: Run Bandit security scan
+      run: |
+        cd backend
+        pip install pbr
+        bandit -r app/ -f json -o bandit-report.json || true
+        bandit -r app/ -ll
+      continue-on-error: true
+    
+    # Step 6: Run tests
+    - name: Run pytest
+      run: |
+        cd backend
+        pytest tests/ -v --cov=app --cov-report=term-missing
+      env:
+        DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/test
